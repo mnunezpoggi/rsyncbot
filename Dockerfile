@@ -25,8 +25,10 @@ WORKDIR /usr/src/app/chatbot
 RUN mvn -T 1C clean install && rm -rf target
 WORKDIR /usr/src/app/
 COPY src /usr/src/app/src
-RUN mvn clean package
-ENTRYPOINT ["java"]
-CMD ["-jar", "/usr/src/app/target/rsyncbot-jar-with-dependencies.jar"]
-#ENTRYPOINT ["/usr/local/bin/mvn-entrypoint.sh"]
-#CMD ["mvn"]
+#RUN mvn clean package
+RUN mvn clean compile
+#ENTRYPOINT ["java"]
+#CMD ["-jar", "/usr/src/app/target/rsyncbot-jar-with-dependencies.jar"]
+
+ENTRYPOINT ["/usr/local/bin/mvn-entrypoint.sh"]
+CMD ["mvn", "exec:java", "-Dexec.mainClass=xyz.kraftwork.rsyncbot.Rsyncbot"]
