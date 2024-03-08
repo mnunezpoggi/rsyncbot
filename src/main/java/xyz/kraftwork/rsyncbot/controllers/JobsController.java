@@ -1,0 +1,179 @@
+/*
+ * Click nbfs://nbhost/SystemFileSystem/Templates/Licenses/license-default.txt to change this license
+ * Click nbfs://nbhost/SystemFileSystem/Templates/Classes/Class.java to edit this template
+ */
+package xyz.kraftwork.rsyncbot.controllers;
+
+import com.coreoz.wisp.JobStatus;
+import com.coreoz.wisp.Scheduler;
+import com.coreoz.wisp.schedule.Schedule;
+import com.coreoz.wisp.schedule.Schedules;
+import com.coreoz.wisp.schedule.cron.CronExpressionSchedule;
+import com.j256.ormlite.dao.Dao;
+import com.j256.ormlite.dao.DaoManager;
+import com.j256.ormlite.jdbc.JdbcConnectionSource;
+import java.sql.SQLException;
+import java.time.Duration;
+import java.util.HashMap;
+import java.util.Iterator;
+import java.util.List;
+import java.util.logging.Level;
+import java.util.logging.Logger;
+import org.apache.commons.cli.CommandLine;
+import xyz.kraftwork.chatbot.ChatInfo;
+import xyz.kraftwork.chatbot.Chatbot;
+import xyz.kraftwork.chatbot.RegistrationListener;
+import xyz.kraftwork.rsyncbot.models.Credential;
+import xyz.kraftwork.rsyncbot.models.Job;
+import xyz.kraftwork.rsyncbot.models.Server;
+
+/**
+ *
+ * @author mnunez
+ */
+public class JobsController extends BaseController implements RegistrationListener {
+    
+    private Dao<Job, Integer> persistence;
+    private Dao<Server, Integer> servers;
+    private Dao<Credential, Integer> credentials;
+    private final Scheduler scheduler;
+    
+    private static final String[] REQUIRED_PARAMS = {"name", "schedule", "source_path", "destination_path"};
+    
+    public JobsController(Chatbot bot) {
+        super(bot);
+        scheduler = new Scheduler();
+        bot.addRegistrationListener(this);
+    }
+    
+    @Override
+    public Object onRegistration() {
+        scheduleJobs();
+        return null;
+    }
+    
+    @Override
+    public void create(ChatInfo info, CommandLine cl) {
+        String message = "";
+        boolean failed = false;
+        try {
+            String name = cl.getOptionValue("name");
+            // TODO: check schedule
+            // TODO: Check destination_path
+            // TODO: Check cron
+            String schedule = cl.getOptionValue("schedule");
+            String source_path = cl.getOptionValue("source_path");
+            String destination_path = cl.getOptionValue("destination_path");
+            String source_server = cl.getOptionValue("source_server");
+            String destination_server = cl.getOptionValue("destination_server");
+            String credential = cl.getOptionValue("credential");
+            
+            if(source_server != null && destination_server != null){
+                message += "Source and destination can't be remote. Sorry. ";
+                failed = true;
+            }
+            if((source_server != null || destination_server != null) && credential == null){
+                message += "Remote server found but no credential specified. ";
+                failed = true;
+            }
+            List<Server> remote;
+            String failed_message = "Couldn't find server ";
+            if(source_server != null){
+                remote = servers.queryForEq("name", source_server);
+                failed_message += source_server;
+            } else {
+                remote = servers.queryForEq("name", destination_server);
+                failed_message += destination_server;
+            }
+            System.out.println("00000000000000 REMOTE: " + remote);
+            if(remote.isEmpty()){
+                failed = true;
+                message += failed_message;
+            }
+            List<Credential> cred = credentials.queryForEq("name", credential);
+            if(cred.isEmpty()){
+                message += "Couldn't find credential " + credential;
+                failed = true;
+            }
+
+            if (!failed) {
+                Job job = new Job();
+                job.setName(name);
+                job.setSource_path(source_path);
+                job.setDestination_path(destination_path);
+                job.setSchedule(schedule.replace('_', ' '));
+       
+                if(credential != null){
+                    job.setCredential(cred.get(0));
+                    if(source_server != null){
+                        job.setSource_server(remote.get(0));
+                    } else {
+                        job.setDestination_server(remote.get(0));
+                    }
+                }
+                persistence.create(job);
+                info.setMessage("Successfully saved job: " + job);
+                persistence.update(job);
+                this.scheduleJob(job);
+            } else {
+                info.setMessage(message);
+            }
+
+        } catch (SQLException ex) {
+            info.setMessage("Error: " + ex.getMessage());
+        } finally {
+            bot.sendMessage(info);
+        }
+        
+    }
+    
+    @Override
+    public void show(ChatInfo info, CommandLine cl) {
+        throw new UnsupportedOperationException("Not supported yet."); // Generated from nbfs://nbhost/SystemFileSystem/Templates/Classes/Code/GeneratedMethodBody
+    }
+    
+    @Override
+    protected void setPersistence(JdbcConnectionSource dataSource) {
+        try {
+            this.persistence = DaoManager.createDao(dataSource, Job.class);
+            this.servers = DaoManager.createDao(dataSource, Server.class);
+            this.credentials = DaoManager.createDao(dataSource, Credential.class);
+        } catch (SQLException ex) {
+            Logger.getLogger(JobsController.class.getName()).log(Level.SEVERE, null, ex);
+        }
+    }
+    
+    private void scheduleJob(Job job) {
+        job.setController(this);
+        bot.sendMessageAll("Scheduling job: " + job);
+        CronExpressionSchedule sc = CronExpressionSchedule.parse(job.getSchedule());
+        scheduler.schedule(job.getName(), job, sc);
+        
+    }
+    
+    private void scheduleJobs() {
+        bot.sendMessageAll("Starting jobs cleaner");
+        scheduler.schedule(
+                "jobs_cleaner",
+                () -> scheduler
+                        .jobStatus()
+                        .stream()
+                        .filter(job -> job.status() == JobStatus.DONE)
+                        .filter(job -> job.lastExecutionEndedTimeInMillis() < (System.currentTimeMillis() - 10000))
+                        .forEach(job -> {
+                            scheduler.remove(job.name());
+                        }),
+                Schedules.fixedDelaySchedule(Duration.ofMinutes(10))
+        );
+        Iterator<Job> i = persistence.iterator();
+        while (i.hasNext()) {
+            scheduleJob(i.next());
+        }
+        
+    }
+    
+    public void notify(String message){
+        bot.sendMessageAll(message);
+    }
+    
+}
