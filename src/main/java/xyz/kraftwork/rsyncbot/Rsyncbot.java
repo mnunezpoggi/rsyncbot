@@ -24,6 +24,7 @@ public class Rsyncbot implements CommandListener {
     private static final String UPDATE_SERVER = "rsync:update_server";
     
     private static final String CREATE_JOB = "rsync:create_job";
+    private static final String REMOVE_JOB ="rsync:remove_job";
 
     
     private final Chatbot bot;
@@ -57,6 +58,8 @@ public class Rsyncbot implements CommandListener {
         bot.addCommandOptions(CREATE_JOB, false, "ds", "destination_server", true, "Destination server name for this job");
         bot.addCommandOptions(CREATE_JOB, true, "dp", "destination_path", true, "Destination path for this job");
         bot.addCommandOptions(CREATE_JOB, false, "c", "credential", true, "Credential to use");
+        
+        bot.addCommandOptions(REMOVE_JOB, true, "n", "name", true, "Name of the job to be removed");
         // rsync:create_job --name=local_copy --schedule=*_*_*_*_* --source_server=localhost --source_credential=sample --source_path=/tmp/a --destination_server=localhost --destination_credential=sample --destination_path=/tmp/b
     }
 
@@ -83,6 +86,9 @@ public class Rsyncbot implements CommandListener {
             
             case CREATE_JOB -> {
                 jobsController.create(info, cl);
+            }
+            case REMOVE_JOB -> {
+                jobsController.remove(info, cl);
             }
 
         }

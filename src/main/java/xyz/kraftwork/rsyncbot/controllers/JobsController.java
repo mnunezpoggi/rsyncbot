@@ -17,6 +17,7 @@ import java.time.Duration;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Optional;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import org.apache.commons.cli.CommandLine;
@@ -32,26 +33,26 @@ import xyz.kraftwork.rsyncbot.models.Server;
  * @author mnunez
  */
 public class JobsController extends BaseController implements RegistrationListener {
-    
+
     private Dao<Job, Integer> persistence;
     private Dao<Server, Integer> servers;
     private Dao<Credential, Integer> credentials;
     private final Scheduler scheduler;
-    
+
     private static final String[] REQUIRED_PARAMS = {"name", "schedule", "source_path", "destination_path"};
-    
+
     public JobsController(Chatbot bot) {
         super(bot);
         scheduler = new Scheduler();
         bot.addRegistrationListener(this);
     }
-    
+
     @Override
     public Object onRegistration() {
         scheduleJobs();
         return null;
     }
-    
+
     @Override
     public void create(ChatInfo info, CommandLine cl) {
         String message = "";
@@ -67,33 +68,40 @@ public class JobsController extends BaseController implements RegistrationListen
             String source_server = cl.getOptionValue("source_server");
             String destination_server = cl.getOptionValue("destination_server");
             String credential = cl.getOptionValue("credential");
-            
-            if(source_server != null && destination_server != null){
+
+            if (source_server != null && destination_server != null) {
                 message += "Source and destination can't be remote. Sorry. ";
                 failed = true;
             }
-            if((source_server != null || destination_server != null) && credential == null){
+            if ((source_server != null || destination_server != null) && credential == null) {
                 message += "Remote server found but no credential specified. ";
                 failed = true;
             }
-            List<Server> remote;
-            String failed_message = "Couldn't find server ";
-            if(source_server != null){
-                remote = servers.queryForEq("name", source_server);
-                failed_message += source_server;
-            } else {
-                remote = servers.queryForEq("name", destination_server);
-                failed_message += destination_server;
+            List<Server> found_source_server = null;
+            List<Server> found_destination_server = null;
+            List<Credential> found_credential = null;
+            String failed_message = "Couldn't find ";
+            if (!failed && source_server != null) {
+                found_source_server = servers.queryForEq("name", source_server);
+                if (found_source_server.isEmpty()) {
+                    message += failed_message + "source_server " + source_server;
+                    failed = true;
+                }
             }
-            System.out.println("00000000000000 REMOTE: " + remote);
-            if(remote.isEmpty()){
-                failed = true;
-                message += failed_message;
+            if (!failed && destination_server != null) {
+                found_destination_server = servers.queryForEq("name", destination_server);
+                if (found_destination_server.isEmpty()) {
+                    message += failed_message + "destination_server " + destination_server;
+                    failed = true;
+                }
             }
-            List<Credential> cred = credentials.queryForEq("name", credential);
-            if(cred.isEmpty()){
-                message += "Couldn't find credential " + credential;
-                failed = true;
+
+            if (!failed && credential != null) {
+                found_credential = credentials.queryForEq("name", credential);
+                if (found_credential.isEmpty()) {
+                    message += "Couldn't find credential " + credential;
+                    failed = true;
+                }
             }
 
             if (!failed) {
@@ -102,13 +110,14 @@ public class JobsController extends BaseController implements RegistrationListen
                 job.setSource_path(source_path);
                 job.setDestination_path(destination_path);
                 job.setSchedule(schedule.replace('_', ' '));
-       
-                if(credential != null){
-                    job.setCredential(cred.get(0));
-                    if(source_server != null){
-                        job.setSource_server(remote.get(0));
-                    } else {
-                        job.setDestination_server(remote.get(0));
+
+                if (credential != null) {
+                    job.setCredential(found_credential.get(0));
+                    if (source_server != null) {
+                        job.setSource_server(found_source_server.get(0));
+                    }
+                    if (destination_server != null) {
+                        job.setDestination_server(found_destination_server.get(0));
                     }
                 }
                 persistence.create(job);
@@ -121,17 +130,18 @@ public class JobsController extends BaseController implements RegistrationListen
 
         } catch (SQLException ex) {
             info.setMessage("Error: " + ex.getMessage());
+            ex.printStackTrace();
         } finally {
             bot.sendMessage(info);
         }
-        
+
     }
-    
+
     @Override
     public void show(ChatInfo info, CommandLine cl) {
         throw new UnsupportedOperationException("Not supported yet."); // Generated from nbfs://nbhost/SystemFileSystem/Templates/Classes/Code/GeneratedMethodBody
     }
-    
+
     @Override
     protected void setPersistence(JdbcConnectionSource dataSource) {
         try {
@@ -142,15 +152,44 @@ public class JobsController extends BaseController implements RegistrationListen
             Logger.getLogger(JobsController.class.getName()).log(Level.SEVERE, null, ex);
         }
     }
-    
+
+    public void remove(ChatInfo info, CommandLine cl) {
+        try {
+            String jobName = cl.getOptionValue("name");
+            List<Job> job = persistence.queryForEq("name", jobName);
+            if (job.isEmpty()) {
+                info.setMessage("Couldn't find job " + jobName + " to remove.");
+            } else {
+                //scheduler.remove(jobName);
+                Optional<com.coreoz.wisp.Job> j = scheduler.findJob(jobName);
+                if (j.isPresent()) {
+                    com.coreoz.wisp.Job sj = j.get();
+                    if (sj.status() != JobStatus.DONE) {
+                        info.setMessage("WARNING: Job " + jobName + " is currently running, it will be fully removed once completed");
+                        scheduler.cancel(jobName);
+                    }
+                }
+                persistence.delete(job.get(0));
+                info.setMessage("Successfully removed " + jobName);
+            }
+        } catch (Exception ex) {
+            info.setMessage(ex.getMessage());
+        }
+//        finally {
+//          
+//        }
+        bot.sendMessage(info);
+
+    }
+
     private void scheduleJob(Job job) {
         job.setController(this);
         bot.sendMessageAll("Scheduling job: " + job);
         CronExpressionSchedule sc = CronExpressionSchedule.parse(job.getSchedule());
         scheduler.schedule(job.getName(), job, sc);
-        
+
     }
-    
+
     private void scheduleJobs() {
         bot.sendMessageAll("Starting jobs cleaner");
         scheduler.schedule(
@@ -169,11 +208,11 @@ public class JobsController extends BaseController implements RegistrationListen
         while (i.hasNext()) {
             scheduleJob(i.next());
         }
-        
+
     }
-    
-    public void notify(String message){
+
+    public void notify(String message) {
         bot.sendMessageAll(message);
     }
-    
+
 }
