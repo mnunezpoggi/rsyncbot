@@ -23,7 +23,7 @@ pipeline {
         }
         stage('Deploy') {
             steps {
-                  sh "docker run -v $RSYNCBOT_KEYS:/usr/src/app/keys -v $RSYNCBOT_CONFIG:/usr/src/app/config  --name=rsyncbot -d --restart=always rsyncbot:main"
+                  sh "docker run -v $RSYNCBOT_KEYS:/usr/src/app/keys -v $RSYNCBOT_CONFIG:/usr/src/app/config -v $RSYNCBOT_FILES:/media --name=rsyncbot -d --restart=always rsyncbot:main"
                   //sh "echo asdf"
             }
         }
