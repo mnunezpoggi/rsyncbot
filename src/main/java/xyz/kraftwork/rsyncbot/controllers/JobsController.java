@@ -12,6 +12,7 @@ import com.coreoz.wisp.schedule.cron.CronExpressionSchedule;
 import com.j256.ormlite.dao.Dao;
 import com.j256.ormlite.dao.DaoManager;
 import com.j256.ormlite.jdbc.JdbcConnectionSource;
+import fc.cron.CronExpression;
 import java.sql.SQLException;
 import java.time.Duration;
 import java.util.HashMap;
@@ -62,12 +63,14 @@ public class JobsController extends BaseController implements RegistrationListen
             // TODO: check schedule
             // TODO: Check destination_path
             // TODO: Check cron
-            String schedule = cl.getOptionValue("schedule");
+            String schedule = cl.getOptionValue("schedule").replace('_', ' ');
             String source_path = cl.getOptionValue("source_path");
             String destination_path = cl.getOptionValue("destination_path");
             String source_server = cl.getOptionValue("source_server");
             String destination_server = cl.getOptionValue("destination_server");
             String credential = cl.getOptionValue("credential");
+            
+            CronExpression.createWithoutSeconds(schedule);
 
             if (source_server != null && destination_server != null) {
                 message += "Source and destination can't be remote. Sorry. ";
@@ -109,7 +112,7 @@ public class JobsController extends BaseController implements RegistrationListen
                 job.setName(name);
                 job.setSource_path(source_path);
                 job.setDestination_path(destination_path);
-                job.setSchedule(schedule.replace('_', ' '));
+                job.setSchedule(schedule);
 
                 if (credential != null) {
                     job.setCredential(found_credential.get(0));
@@ -128,7 +131,7 @@ public class JobsController extends BaseController implements RegistrationListen
                 info.setMessage(message);
             }
 
-        } catch (SQLException ex) {
+        } catch (Exception ex) {
             info.setMessage("Error: " + ex.getMessage());
             ex.printStackTrace();
         } finally {
