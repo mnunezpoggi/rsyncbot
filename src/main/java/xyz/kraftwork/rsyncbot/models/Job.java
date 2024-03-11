@@ -10,6 +10,7 @@ import com.github.fracpete.rsync4j.core.Binaries;
 import com.j256.ormlite.field.DatabaseField;
 import com.j256.ormlite.table.DatabaseTable;
 import java.io.File;
+import java.nio.charset.Charset;
 import java.util.ArrayList;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -55,11 +56,11 @@ public class Job implements Runnable {
             System.out.println(rsync);
             String[] cmd = new String[rsync.size()];
             rsync.toArray(cmd);
-            System.out.println(IOUtils.toString(Runtime.getRuntime().exec("whoami").getInputStream()));
+            System.out.println(IOUtils.toString(Runtime.getRuntime().exec("whoami").getInputStream(), Charset.defaultCharset()));
             Process p = Runtime.getRuntime().exec(cmd);
             p.waitFor();
-            String output = IOUtils.toString(p.getInputStream());
-            String errorOutput = IOUtils.toString(p.getErrorStream());
+            String output = IOUtils.toString(p.getInputStream(), Charset.defaultCharset());
+            String errorOutput = IOUtils.toString(p.getErrorStream(), Charset.defaultCharset());
             System.out.println(output);
             System.out.println(errorOutput);
             if(p.exitValue() == 0){
@@ -67,19 +68,6 @@ public class Job implements Runnable {
             } else {
                 controller.notify("Fail!: " + errorOutput.replace("\n", ". " ));
             }
-//                    .source("rsync://" + source_credential.getUser() + "@" + source_server.getHost() + ":" + source_path)
-//                    .destination("rsync://" + destination_credential.getUser() + "@" + destination_server.getHost() + ":" + source_path)
-//                    .archive(true)
-//                    .rsh(Binaries.sshBinary() + " - i " + Binaries.convertPath("./config/" + source_credential.getKey_path()));
-
-//            CollectingProcessOutput output = rsync.execute();
-//            System.out.println(output.getStdOut());
-//            System.out.println("Exit code: " + output.getExitCode());
-//            if (output.getExitCode() > 0) {
-//                controller.notify("Non zero exit: " + output.getStdErr().replace('\n', ' '));
-//            } else {
-//                controller.notify("Success!");
-//            }
         } catch (Exception ex) {
             controller.notify("Error on " + this + ":" + ex.getMessage());
         }

@@ -69,7 +69,7 @@ public class JobsController extends BaseController implements RegistrationListen
             String source_server = cl.getOptionValue("source_server");
             String destination_server = cl.getOptionValue("destination_server");
             String credential = cl.getOptionValue("credential");
-            
+
             CronExpression.createWithoutSeconds(schedule);
 
             if (source_server != null && destination_server != null) {
@@ -142,7 +142,7 @@ public class JobsController extends BaseController implements RegistrationListen
 
     @Override
     public void show(ChatInfo info, CommandLine cl) {
-        throw new UnsupportedOperationException("Not supported yet."); // Generated from nbfs://nbhost/SystemFileSystem/Templates/Classes/Code/GeneratedMethodBody
+        throw new UnsupportedOperationException("Not supported yet.");
     }
 
     @Override
@@ -216,6 +216,32 @@ public class JobsController extends BaseController implements RegistrationListen
 
     public void notify(String message) {
         bot.sendMessageAll(message);
+    }
+
+    public void update_job_schedule(ChatInfo info, CommandLine cl) {
+        try {
+            String schedule = cl.getOptionValue("schedule").replace('_', ' ');
+            CronExpression.createWithoutSeconds(schedule);
+            String jobName = cl.getOptionValue("name");
+            List<Job> job = persistence.queryForEq("name", jobName);
+            if (job.isEmpty()) {
+                info.setMessage("Couldn't find job " + jobName + " to remove.");
+            } else {
+                Job found = job.get(0);
+                found.setSchedule(schedule);
+                persistence.update(found);
+                Optional<com.coreoz.wisp.Job> j = scheduler.findJob(jobName);
+                scheduler.cancel(jobName);
+                this.scheduleJob(found);
+                info.setMessage("Successfully updated " + jobName);
+            }
+        } catch (Exception ex) {
+            info.setMessage(ex.getMessage());
+        }
+//        finally {
+//          
+//        }
+        bot.sendMessage(info);
     }
 
 }
