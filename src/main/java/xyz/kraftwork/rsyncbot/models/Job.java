@@ -70,6 +70,7 @@ public class Job implements Runnable {
             }
         } catch (Exception ex) {
             controller.notify("Error on " + this + ":" + ex.getMessage());
+            ex.printStackTrace();
         }
     }
 

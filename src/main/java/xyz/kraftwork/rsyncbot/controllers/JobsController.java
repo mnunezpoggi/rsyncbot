@@ -177,6 +177,7 @@ public class JobsController extends BaseController implements RegistrationListen
             }
         } catch (Exception ex) {
             info.setMessage(ex.getMessage());
+            ex.printStackTrace();
         }
 //        finally {
 //          
@@ -237,6 +238,7 @@ public class JobsController extends BaseController implements RegistrationListen
             }
         } catch (Exception ex) {
             info.setMessage(ex.getMessage());
+            ex.printStackTrace();
         }
 //        finally {
 //          

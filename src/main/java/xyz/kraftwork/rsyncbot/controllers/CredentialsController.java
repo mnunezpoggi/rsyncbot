@@ -57,6 +57,7 @@ public class CredentialsController extends BaseController implements Registratio
             info.setMessage("Successfully saved credential: " + cred);
         } catch (SQLException ex) {
             info.setMessage("Error saving credential: " + ex.getMessage());
+            ex.printStackTrace();
         }
         bot.sendMessage(info);
     }

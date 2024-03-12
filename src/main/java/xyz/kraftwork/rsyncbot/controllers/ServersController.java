@@ -4,6 +4,7 @@
  */
 package xyz.kraftwork.rsyncbot.controllers;
 
+import com.j256.ormlite.dao.CloseableWrappedIterable;
 import com.j256.ormlite.dao.Dao;
 import com.j256.ormlite.dao.DaoManager;
 import com.j256.ormlite.jdbc.JdbcConnectionSource;
@@ -41,6 +42,7 @@ public class ServersController extends BaseController {
             info.setMessage("Successfully saved server: " + server);
         } catch (SQLException ex) {
             info.setMessage("Error saving server: " + ex.getMessage());
+            ex.printStackTrace();
         }
         bot.sendMessage(info);
     }
@@ -60,10 +62,20 @@ public class ServersController extends BaseController {
     }
 
     public void list(ChatInfo info) {
-        Iterator<Server> i = persistence.iterator();
-        while (i.hasNext()) {
-            info.setMessage("Server: " + i.next().toString());
-            bot.sendMessage(info);
+        CloseableWrappedIterable<Server> wrappedIterable = persistence.getWrappedIterable();
+        try {
+            for (Server s : wrappedIterable) {
+                info.setMessage("Server: " + s.toString());
+                bot.sendMessage(info);
+            }
+        } finally {
+            try {
+                wrappedIterable.close();
+            } catch (Exception ex) {
+                ex.printStackTrace();
+                info.setMessage(ex.getMessage());
+                bot.sendMessage(info);
+            }
         }
     }
 
