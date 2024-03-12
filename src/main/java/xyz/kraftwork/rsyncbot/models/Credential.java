@@ -69,7 +69,7 @@ public class Credential {
 
     @Override
     public String toString() {
-        return "Credential{" + "id=" + id + ", name=" + name + ", user=" + user + ", key_path=" + key_path + '}';
+        return String.format("{ name: %s, user: %s, key_path: %s }", getName(), getUser(), getKey_path());
     }
     
     

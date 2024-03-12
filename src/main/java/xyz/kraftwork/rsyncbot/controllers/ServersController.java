@@ -8,6 +8,7 @@ import com.j256.ormlite.dao.Dao;
 import com.j256.ormlite.dao.DaoManager;
 import com.j256.ormlite.jdbc.JdbcConnectionSource;
 import java.sql.SQLException;
+import java.util.Iterator;
 import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -20,8 +21,8 @@ import xyz.kraftwork.rsyncbot.models.Server;
  *
  * @author mnunez
  */
-public class ServersController extends BaseController{
-    
+public class ServersController extends BaseController {
+
     private Dao<Server, Integer> persistence;
 
     public ServersController(Chatbot bot) {
@@ -57,5 +58,13 @@ public class ServersController extends BaseController{
             Logger.getLogger(ServersController.class.getName()).log(Level.SEVERE, null, ex);
         }
     }
-    
+
+    public void list(ChatInfo info) {
+        Iterator<Server> i = persistence.iterator();
+        while (i.hasNext()) {
+            info.setMessage("Server: " + i.next().toString());
+            bot.sendMessage(info);
+        }
+    }
+
 }

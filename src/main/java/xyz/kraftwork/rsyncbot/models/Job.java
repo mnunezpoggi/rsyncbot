@@ -63,10 +63,10 @@ public class Job implements Runnable {
             String errorOutput = IOUtils.toString(p.getErrorStream(), Charset.defaultCharset());
             System.out.println(output);
             System.out.println(errorOutput);
-            if(p.exitValue() == 0){
-                controller.notify("Success!: " + output.replace("\n", ". " ));
+            if (p.exitValue() == 0) {
+                controller.notify("Success!: " + output.replace("\n", ". "));
             } else {
-                controller.notify("Fail!: " + errorOutput.replace("\n", ". " ));
+                controller.notify("Fail!: " + errorOutput.replace("\n", ". "));
             }
         } catch (Exception ex) {
             controller.notify("Error on " + this + ":" + ex.getMessage());
@@ -180,7 +180,26 @@ public class Job implements Runnable {
 
     @Override
     public String toString() {
-        return "Job{" + "controller=" + controller + ", id=" + id + ", name=" + name + ", schedule=" + schedule + ", source_server=" + source_server + ", source_path=" + source_path + ", destination_server=" + destination_server + ", destination_path=" + destination_path + ", credential=" + credential + '}';
+        StringBuilder s = new StringBuilder();
+        s.append(String.format("{ name:  %s, schedule: %s", getName(), getSchedule()));
+        
+        String paths = ", source: %s, destination: %s";
+        String source = null;
+        String destination = null;
+        if (getSource_server() != null) {
+            source = String.format("%s@%s:%s", getCredential().getName(),getSource_server().getName(), getSource_path());
+        } else {
+            source = getSource_path();
+        }
+        if(getDestination_server() != null){
+            destination = String.format("%s@%s:%s", getCredential().getName(), getDestination_server().getName(), getDestination_path());
+        } else {
+            destination = getDestination_path();
+        }
+        paths = String.format(paths, source, destination);
+        s.append(paths);
+        s.append(" }");
+        return s.toString();
     }
 
 }

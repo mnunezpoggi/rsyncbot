@@ -187,7 +187,7 @@ public class JobsController extends BaseController implements RegistrationListen
 
     private void scheduleJob(Job job) {
         job.setController(this);
-        bot.sendMessageAll("Scheduling job: " + job);
+        bot.sendMessageAll("Scheduling: " + job);
         CronExpressionSchedule sc = CronExpressionSchedule.parse(job.getSchedule());
         scheduler.schedule(job.getName(), job, sc);
 
