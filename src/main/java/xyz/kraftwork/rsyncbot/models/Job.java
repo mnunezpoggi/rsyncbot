@@ -63,6 +63,7 @@ public class Job implements Runnable {
             String errorOutput = IOUtils.toString(p.getErrorStream(), Charset.defaultCharset());
             System.out.println(output);
             System.out.println(errorOutput);
+            System.out.println("EXIT VALUE: " + p.exitValue());
             if (p.exitValue() == 0) {
                 controller.notify("Success!: " + output.replace("\n", ". "));
             } else {

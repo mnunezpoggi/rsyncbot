@@ -240,10 +240,25 @@ public class JobsController extends BaseController implements RegistrationListen
             info.setMessage(ex.getMessage());
             ex.printStackTrace();
         }
-//        finally {
-//          
-//        }
         bot.sendMessage(info);
     }
 
+    public void runJob(ChatInfo info, CommandLine cl) {
+        try {
+            String jobName = cl.getOptionValue("name");
+            List<Job> job = persistence.queryForEq("name", jobName);
+            if (job.isEmpty()) {
+                info.setMessage("Couldn't find job " + jobName + " to run.");
+                bot.sendMessage(info);
+            } else {
+                Job found = job.get(0);
+                found.setController(this);
+                new Thread(found).start();
+            }
+        } catch (Exception ex) {
+            info.setMessage(ex.getMessage());
+            ex.printStackTrace();
+        }
+
+    }
 }
