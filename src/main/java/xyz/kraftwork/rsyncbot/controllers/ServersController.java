@@ -31,6 +31,11 @@ public class ServersController extends BaseController {
     }
 
     @Override
+    protected Dao getPersistence() {
+        return this.persistence;
+    }
+
+    @Override
     public void create(ChatInfo info, CommandLine cl) {
         String name = cl.getOptionValue("name");
         String host = cl.getOptionValue("host");
@@ -61,22 +66,9 @@ public class ServersController extends BaseController {
         }
     }
 
+    @Override
     public void list(ChatInfo info) {
-        CloseableWrappedIterable<Server> wrappedIterable = persistence.getWrappedIterable();
-        try {
-            for (Server s : wrappedIterable) {
-                info.setMessage("Server: " + s.toString());
-                bot.sendMessage(info);
-            }
-        } finally {
-            try {
-                wrappedIterable.close();
-            } catch (Exception ex) {
-                ex.printStackTrace();
-                info.setMessage(ex.getMessage());
-                bot.sendMessage(info);
-            }
-        }
+        super.list(info);
     }
 
 }

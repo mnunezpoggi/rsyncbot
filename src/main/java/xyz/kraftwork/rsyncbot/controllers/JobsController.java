@@ -9,6 +9,7 @@ import com.coreoz.wisp.Scheduler;
 import com.coreoz.wisp.schedule.Schedule;
 import com.coreoz.wisp.schedule.Schedules;
 import com.coreoz.wisp.schedule.cron.CronExpressionSchedule;
+import com.j256.ormlite.dao.CloseableWrappedIterable;
 import com.j256.ormlite.dao.Dao;
 import com.j256.ormlite.dao.DaoManager;
 import com.j256.ormlite.jdbc.JdbcConnectionSource;
@@ -52,6 +53,11 @@ public class JobsController extends BaseController implements RegistrationListen
     public Object onRegistration() {
         scheduleJobs();
         return null;
+    }
+    
+    @Override
+    protected Dao getPersistence(){
+        return this.persistence;
     }
 
     @Override
@@ -219,7 +225,7 @@ public class JobsController extends BaseController implements RegistrationListen
         bot.sendMessageAll(message);
     }
 
-    public void update_job_schedule(ChatInfo info, CommandLine cl) {
+    public void updateJobSchedule(ChatInfo info, CommandLine cl) {
         try {
             String schedule = cl.getOptionValue("schedule").replace('_', ' ');
             CronExpression.createWithoutSeconds(schedule);
@@ -260,5 +266,10 @@ public class JobsController extends BaseController implements RegistrationListen
             ex.printStackTrace();
         }
 
+    }
+    
+    @Override
+    public void list(ChatInfo info){
+        super.list(info);
     }
 }

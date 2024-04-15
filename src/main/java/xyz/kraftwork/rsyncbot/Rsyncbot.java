@@ -24,6 +24,7 @@ public class Rsyncbot implements CommandListener {
     private static final String UPDATE_SERVER = "rsync:update_server";
     private static final String LIST_SERVERS = "rsync:list_servers";
     
+    private static final String LIST_JOBS = "rsync:list_jobs";
     private static final String CREATE_JOB = "rsync:create_job";
     private static final String REMOVE_JOB = "rsync:remove_job";
     private static final String UPDATE_JOB_SCHEDULE = "rsync:update_job_schedule";
@@ -54,6 +55,7 @@ public class Rsyncbot implements CommandListener {
         bot.addCommandOptions(CREATE_SERVER, true, "h", "host", true, "Host");
         bot.addCommand(new Command(LIST_SERVERS));
         
+        bot.addCommand(new Command(LIST_JOBS));
         bot.addCommandOptions(CREATE_JOB, true, "n", "name", true, "Name for this job");
         bot.addCommandOptions(CREATE_JOB, true, "s", "schedule", true, "Schedule for this job");
         bot.addCommandOptions(CREATE_JOB, false, "ss", "source_server", true, "Source server name for this job");
@@ -101,10 +103,13 @@ public class Rsyncbot implements CommandListener {
                 jobsController.remove(info, cl);
             }
             case UPDATE_JOB_SCHEDULE -> {
-                jobsController.update_job_schedule(info, cl);
+                jobsController.updateJobSchedule(info, cl);
             }
             case RUN_JOB -> {
                 jobsController.runJob(info, cl);
+            }
+            case LIST_JOBS -> {
+                jobsController.list(info);
             }
 
         }

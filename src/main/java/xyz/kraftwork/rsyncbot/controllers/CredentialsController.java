@@ -33,7 +33,12 @@ public class CredentialsController extends BaseController implements Registratio
         super(bot);
         bot.addRegistrationListener(this);
     }
-    
+
+    @Override
+    protected Dao getPersistence() {
+        return this.persistence;
+    }
+
     @Override
     public Object onRegistration() {
         checkKeys();
