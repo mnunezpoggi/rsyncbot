@@ -38,7 +38,7 @@ public class Job implements Runnable {
             ArrayList<String> rsync = new ArrayList();
             rsync.add(RSYNC_INIT);
             rsync.add("-a");
-            rsync.add("-v");
+            //rsync.add("-v");
             if (credential != null) {
                 rsync.add("-e");
                 rsync.add("" + Binaries.sshBinary() + " -i " + new File("keys/" + credential.getKey_path()).getAbsolutePath() + "");
