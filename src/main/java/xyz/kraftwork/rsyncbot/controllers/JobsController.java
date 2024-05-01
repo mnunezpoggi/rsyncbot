@@ -13,6 +13,7 @@ import com.j256.ormlite.dao.CloseableWrappedIterable;
 import com.j256.ormlite.dao.Dao;
 import com.j256.ormlite.dao.DaoManager;
 import com.j256.ormlite.jdbc.JdbcConnectionSource;
+import com.j256.ormlite.jdbc.JdbcPooledConnectionSource;
 import fc.cron.CronExpression;
 import java.sql.SQLException;
 import java.time.Duration;
@@ -152,7 +153,7 @@ public class JobsController extends BaseController implements RegistrationListen
     }
 
     @Override
-    protected void setPersistence(JdbcConnectionSource dataSource) {
+    protected void setPersistence(JdbcPooledConnectionSource dataSource) {
         try {
             this.persistence = DaoManager.createDao(dataSource, Job.class);
             this.servers = DaoManager.createDao(dataSource, Server.class);

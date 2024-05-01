@@ -8,6 +8,7 @@ import com.j256.ormlite.dao.CloseableWrappedIterable;
 import com.j256.ormlite.dao.Dao;
 import com.j256.ormlite.dao.DaoManager;
 import com.j256.ormlite.jdbc.JdbcConnectionSource;
+import com.j256.ormlite.jdbc.JdbcPooledConnectionSource;
 import java.io.IOException;
 import java.sql.SQLException;
 import java.util.List;
@@ -46,7 +47,7 @@ public class CredentialsController extends BaseController implements Registratio
     }
 
     @Override
-    protected void setPersistence(JdbcConnectionSource dataSource) {
+    protected void setPersistence(JdbcPooledConnectionSource dataSource) {
         try {
             this.persistence = DaoManager.createDao(dataSource, Credential.class);
         } catch (SQLException ex) {

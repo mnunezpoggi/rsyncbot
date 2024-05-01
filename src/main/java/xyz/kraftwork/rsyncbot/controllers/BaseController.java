@@ -7,6 +7,7 @@ package xyz.kraftwork.rsyncbot.controllers;
 import com.j256.ormlite.dao.CloseableWrappedIterable;
 import com.j256.ormlite.dao.Dao;
 import com.j256.ormlite.jdbc.JdbcConnectionSource;
+import com.j256.ormlite.jdbc.JdbcPooledConnectionSource;
 import java.sql.SQLException;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -50,7 +51,7 @@ public abstract class BaseController {
 
     public abstract void show(ChatInfo info, CommandLine cl);
 
-    protected abstract void setPersistence(JdbcConnectionSource dataSource);
+    protected abstract void setPersistence(JdbcPooledConnectionSource dataSource);
 
     protected abstract Dao getPersistence();
 }

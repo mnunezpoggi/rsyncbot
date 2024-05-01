@@ -65,9 +65,11 @@ public class Job implements Runnable {
             System.out.println(errorOutput);
             System.out.println("EXIT VALUE: " + p.exitValue());
             if (p.exitValue() == 0) {
-                controller.notify("Success!: " + output.replace("\n", ". "));
+                //controller.notify("Success!: " + output.replace("\n", ". "));
+                controller.notify("Job " + this.getName() + " completed successfully");
             } else {
-                controller.notify("Fail!: " + errorOutput.replace("\n", ". "));
+                //controller.notify("Fail!: " + errorOutput.replace("\n", ". "));
+                controller.notify("Job " + this.getName() + " completed with error " + p.exitValue());
             }
         } catch (Exception ex) {
             controller.notify("Error on " + this + ":" + ex.getMessage());

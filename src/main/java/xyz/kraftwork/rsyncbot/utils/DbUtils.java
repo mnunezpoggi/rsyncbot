@@ -5,6 +5,7 @@
 package xyz.kraftwork.rsyncbot.utils;
 
 import com.j256.ormlite.jdbc.JdbcConnectionSource;
+import com.j256.ormlite.jdbc.JdbcPooledConnectionSource;
 import java.sql.SQLException;
 import xyz.kraftwork.chatbot.utils.ConfigurationHolder;
 
@@ -14,9 +15,9 @@ import xyz.kraftwork.chatbot.utils.ConfigurationHolder;
  */
 public class DbUtils {
     
-    private static JdbcConnectionSource datasource;
+    private static JdbcPooledConnectionSource datasource;
 
-    public static JdbcConnectionSource getDataSource() throws SQLException {
+    public static JdbcPooledConnectionSource getDataSource() throws SQLException {
             if(datasource != null){
                 return datasource;
             }
@@ -28,7 +29,7 @@ public class DbUtils {
                 }
             }
             
-            datasource = new JdbcConnectionSource(config.get("DB_URL"), config.get("DB_USER"), config.get("DB_PASSWORD"));
+            datasource = new JdbcPooledConnectionSource(config.get("DB_URL"), config.get("DB_USER"), config.get("DB_PASSWORD"));
             
         return datasource;
     }
