@@ -34,20 +34,15 @@ public abstract class BaseController {
     }
 
     protected void list(ChatInfo info) {
-        CloseableWrappedIterable wrappedIterable = getPersistence().getWrappedIterable();
-        try {
-            for (Object s : wrappedIterable) {
-                info.setMessage(s.getClass().getSimpleName() + ": " + s.toString());
+        try (CloseableWrappedIterable wrappedIterable = getPersistence().getWrappedIterable()) {
+            wrappedIterable.forEach(lib -> {
+                info.setMessage(lib.getClass().getSimpleName() + ": " + lib.toString());
                 bot.sendMessage(info);
-            }
-        } finally {
-            try {
-                wrappedIterable.close();
-            } catch (Exception ex) {
-                ex.printStackTrace();
-                info.setMessage(ex.getMessage());
-                bot.sendMessage(info);
-            }
+            });
+        } catch (Exception ex) {
+            ex.printStackTrace();
+            info.setMessage(ex.getMessage());
+            bot.sendMessage(info);
         }
     }
 
