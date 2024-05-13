@@ -55,9 +55,9 @@ public class JobsController extends BaseController implements RegistrationListen
         scheduleJobs();
         return null;
     }
-    
+
     @Override
-    protected Dao getPersistence(){
+    protected Dao getPersistence() {
         return this.persistence;
     }
 
@@ -149,7 +149,14 @@ public class JobsController extends BaseController implements RegistrationListen
 
     @Override
     public void show(ChatInfo info, CommandLine cl) {
-        throw new UnsupportedOperationException("Not supported yet.");
+        try {
+            Job job = findJob(info, cl);
+            info.setMessage(job.toString());
+        } catch (SQLException ex) {
+            info.setMessage(ex.getMessage());
+            ex.printStackTrace();
+        }
+        bot.sendMessage(info);
     }
 
     @Override
@@ -165,40 +172,41 @@ public class JobsController extends BaseController implements RegistrationListen
 
     public void remove(ChatInfo info, CommandLine cl) {
         try {
-            String jobName = cl.getOptionValue("name");
-            List<Job> job = persistence.queryForEq("name", jobName);
-            if (job.isEmpty()) {
-                info.setMessage("Couldn't find job " + jobName + " to remove.");
+            Job job = findJob(info, cl);
+            if (job == null) {
+                info.setMessage("Couldn't find job " + job.getName() + " to remove.");
             } else {
                 //scheduler.remove(jobName);
-                Optional<com.coreoz.wisp.Job> j = scheduler.findJob(jobName);
-                if (j.isPresent()) {
-                    com.coreoz.wisp.Job sj = j.get();
-                    if (sj.status() != JobStatus.DONE) {
-                        info.setMessage("WARNING: Job " + jobName + " is currently running, it will be fully removed once completed");
-                        scheduler.cancel(jobName);
-                    }
-                }
-                persistence.delete(job.get(0));
-                info.setMessage("Successfully removed " + jobName);
+                unscheduleJob(info, job);
+                persistence.delete(job);
+                info.setMessage("Successfully removed " + job.getName());
             }
         } catch (Exception ex) {
             info.setMessage(ex.getMessage());
             ex.printStackTrace();
         }
-//        finally {
-//          
-//        }
         bot.sendMessage(info);
-
     }
 
     private void scheduleJob(Job job) {
-        job.setController(this);
-        bot.sendMessageAll("Scheduling: " + job);
-        CronExpressionSchedule sc = CronExpressionSchedule.parse(job.getSchedule());
-        scheduler.schedule(job.getName(), job, sc);
+        if (job.isEnabled()) {
+            job.setController(this);
+            bot.sendMessageAll("Scheduling: " + job);
+            CronExpressionSchedule sc = CronExpressionSchedule.parse(job.getSchedule());
+            scheduler.schedule(job.getName(), job, sc);
+        }
+    }
 
+    private void unscheduleJob(ChatInfo info, Job job) {
+        String jobName = job.getName();
+        Optional<com.coreoz.wisp.Job> j = scheduler.findJob(jobName);
+        if (j.isPresent()) {
+            com.coreoz.wisp.Job sj = j.get();
+            if (sj.status() == JobStatus.RUNNING) {
+                info.setMessage("WARNING: Job " + jobName + " is currently running, it will be fully removed once completed");
+                scheduler.cancel(jobName);
+            }
+        }
     }
 
     private void scheduleJobs() {
@@ -252,25 +260,75 @@ public class JobsController extends BaseController implements RegistrationListen
 
     public void runJob(ChatInfo info, CommandLine cl) {
         try {
-            String jobName = cl.getOptionValue("name");
-            List<Job> job = persistence.queryForEq("name", jobName);
-            if (job.isEmpty()) {
-                info.setMessage("Couldn't find job " + jobName + " to run.");
-                bot.sendMessage(info);
-            } else {
-                Job found = job.get(0);
-                found.setController(this);
-                new Thread(found).start();
+            Job job = findJob(info, cl);
+            if (job != null) {
+                job.setController(this);
+                new Thread(job).start();
             }
         } catch (Exception ex) {
             info.setMessage(ex.getMessage());
             ex.printStackTrace();
+            bot.sendMessage(info);
         }
-
     }
-    
+
     @Override
-    public void list(ChatInfo info){
+    public void list(ChatInfo info) {
         super.list(info);
+    }
+
+    private Job findJob(ChatInfo info, CommandLine cl) throws SQLException {
+        String jobName = cl.getOptionValue("name");
+        List<Job> job = persistence.queryForEq("name", jobName);
+        if (job.isEmpty()) {
+            info.setMessage("Couldn't find job " + jobName);
+            bot.sendMessage(info);
+            return null;
+        } else {
+            //scheduler.remove(jobName);
+            Optional<com.coreoz.wisp.Job> j = scheduler.findJob(jobName);
+            if (j.isPresent()) {
+                com.coreoz.wisp.Job sj = j.get();
+                if (sj.status() == JobStatus.RUNNING) {
+                    info.setMessage("WARNING: Job " + jobName + " is currently running");
+                    bot.sendMessage(info);
+                }
+            }
+            return job.get(0);
+        }
+    }
+
+    private void toggleEnabled(Job job, ChatInfo info, boolean value) throws SQLException {
+        String action = value ? "enabled" : "disabled";
+        if (job != null) {
+            job.setEnabled(value);
+            persistence.update(job);
+        }
+        info.setMessage("Successfully " + action + " job " + job.getName());
+        bot.sendMessage(info);
+    }
+
+    public void enable(ChatInfo info, CommandLine cl) {
+        try {
+            Job job = findJob(info, cl);
+            toggleEnabled(job, info, true);
+            scheduleJob(job);
+        } catch (SQLException ex) {
+            info.setMessage(ex.getMessage());
+            ex.printStackTrace();
+            bot.sendMessage(info);
+        }
+    }
+
+    public void disable(ChatInfo info, CommandLine cl) {
+        try {
+            Job job = findJob(info, cl);
+            toggleEnabled(job, info, false);
+            unscheduleJob(info,job);
+        } catch (Exception ex) {
+            info.setMessage(ex.getMessage());
+            ex.printStackTrace();
+            bot.sendMessage(info);
+        }
     }
 }

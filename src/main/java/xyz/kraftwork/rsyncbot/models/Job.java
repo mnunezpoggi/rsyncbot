@@ -102,6 +102,9 @@ public class Job implements Runnable {
 
     @DatabaseField(canBeNull = true, foreign = true, foreignAutoRefresh = true)
     private Credential credential;
+    
+    @DatabaseField(canBeNull = false)
+    private boolean enabled;
 
     public Job() {
     }
@@ -182,10 +185,19 @@ public class Job implements Runnable {
         this.destination_path = destination_path;
     }
 
+    public boolean isEnabled() {
+        return enabled;
+    }
+
+    public void setEnabled(boolean enabled) {
+        this.enabled = enabled;
+    }
+    
+   
     @Override
     public String toString() {
         StringBuilder s = new StringBuilder();
-        s.append(String.format("{ name:  %s, schedule: %s", getName(), getSchedule()));
+        s.append(String.format("{ name:  %s, enabled: %s, schedule: %s", getName(), isEnabled(), getSchedule()));
         
         String paths = ", source: %s, destination: %s";
         String source = null;

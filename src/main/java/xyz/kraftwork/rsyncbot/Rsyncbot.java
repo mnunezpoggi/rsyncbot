@@ -30,6 +30,8 @@ public class Rsyncbot implements CommandListener {
     private static final String REMOVE_JOB = "rsync:remove_job";
     private static final String UPDATE_JOB_SCHEDULE = "rsync:update_job_schedule";
     private static final String RUN_JOB = "rsync:run_job";
+    private static final String ENABLE_JOB = "rsync:enable_job";
+    private static final String DISABLE_JOB = "rsync:disable_job";
     
     private static final String HELP = "rsync:help";
     
@@ -72,6 +74,8 @@ public class Rsyncbot implements CommandListener {
         bot.addCommandOptions(UPDATE_JOB_SCHEDULE, true, "n", "name", true, "Name of the job to be updated");
         bot.addCommandOptions(UPDATE_JOB_SCHEDULE, true, "s", "schedule", true, "The schedule to chage");
         bot.addCommandOptions(RUN_JOB, true, "n", "name", true, "Name of the job to be executed");
+        bot.addCommandOptions(DISABLE_JOB, true, "n", "name", true, "Name of the job to be disabled");
+        bot.addCommandOptions(ENABLE_JOB, true, "n", "name", true, "Name of the job to be enabled");
         
         bot.addCommandOptions(HELP, false, "c", "command", true, "Command to display help");
     }
@@ -115,6 +119,12 @@ public class Rsyncbot implements CommandListener {
             }
             case LIST_JOBS -> {
                 jobsController.list(info);
+            }
+            case ENABLE_JOB -> {
+                jobsController.enable(info, cl);
+            }
+            case DISABLE_JOB -> {
+                jobsController.disable(info, cl);
             }
             case HELP -> {
                 this.sendHelp(info, cl);
