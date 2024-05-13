@@ -11,6 +11,7 @@ import xyz.kraftwork.chatbot.CommandListener;
 import xyz.kraftwork.rsyncbot.controllers.CredentialsController;
 import xyz.kraftwork.rsyncbot.controllers.JobsController;
 import xyz.kraftwork.rsyncbot.controllers.ServersController;
+import xyz.kraftwork.rsyncbot.utils.DbUtils;
 
 public class Rsyncbot implements CommandListener {
         
@@ -29,6 +30,8 @@ public class Rsyncbot implements CommandListener {
     private static final String REMOVE_JOB = "rsync:remove_job";
     private static final String UPDATE_JOB_SCHEDULE = "rsync:update_job_schedule";
     private static final String RUN_JOB = "rsync:run_job";
+    
+    private static final String HELP = "rsync:help";
     
     private final Chatbot bot;
     private final CredentialsController credentialsController;
@@ -69,6 +72,8 @@ public class Rsyncbot implements CommandListener {
         bot.addCommandOptions(UPDATE_JOB_SCHEDULE, true, "n", "name", true, "Name of the job to be updated");
         bot.addCommandOptions(UPDATE_JOB_SCHEDULE, true, "s", "schedule", true, "The schedule to chage");
         bot.addCommandOptions(RUN_JOB, true, "n", "name", true, "Name of the job to be executed");
+        
+        bot.addCommandOptions(HELP, false, "c", "command", true, "Command to display help");
     }
 
     @Override
@@ -111,12 +116,30 @@ public class Rsyncbot implements CommandListener {
             case LIST_JOBS -> {
                 jobsController.list(info);
             }
+            case HELP -> {
+                this.sendHelp(info, cl);
+            }
 
         }
         return null;
     }
+    
+    private void sendHelp(ChatInfo info, CommandLine cl){
+        String command = cl.getOptionValue("command");
+        if(command == null){
+           info.setMessage(bot.getCommands().keySet().toString());
+        } else {
+            Command c = bot.getCommands().get(command);
+            if(c == null){
+                info.setMessage("Unknown command \"" + command + "\"");
+            } else {
+            }
+        }
+        bot.sendMessage(info);
+    }
 
     public static void main(String[] args) {
+        DbUtils.migrate();
         Rsyncbot r = new Rsyncbot();
         
     }

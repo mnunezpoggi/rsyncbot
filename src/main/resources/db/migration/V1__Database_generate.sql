@@ -4,12 +4,9 @@
  */
 /**
  * Author:  mnunez
- * Created: Feb 22, 2024
+ * Created: May 12, 2024
  */
 
-drop database rsyncbot;
-create database rsyncbot;
-use rsyncbot;
 create table credentials(id int not null auto_increment,
                          name varchar(255),
                          user varchar(255),
@@ -30,8 +27,3 @@ create table servers(id int not null auto_increment,
                   destination_path varchar(255) not null,
                   credential_id int,
                   primary key (id));
-                  --foreign key (source_server_id) references servers (id),
-                  --foreign key (source_credential_id) references credentials (id),
-                  --foreign key (destination_server_id) references servers (id),
-                  --foreign key (destination_credential_id) references credentials (id));
-
