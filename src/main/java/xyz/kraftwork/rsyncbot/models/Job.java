@@ -41,7 +41,7 @@ public class Job implements Runnable {
             //rsync.add("-v");
             if (credential != null) {
                 rsync.add("-e");
-                rsync.add("" + Binaries.sshBinary() + " -i " + new File("keys/" + credential.getKey_path()).getAbsolutePath() + "");
+                rsync.add("" + Binaries.sshBinary() + " -o StrictHostKeyChecking=no -i " + new File("keys/" + credential.getKey_path()).getAbsolutePath() + "");
                 if (source_server != null) {
                     rsync.add(buildRemote(source_server, credential, source_path));
                     rsync.add(destination_path);
