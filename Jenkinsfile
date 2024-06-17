@@ -1,6 +1,6 @@
 
 pipeline {
-    agent { label 'docker' }
+    agent { label 'bot-01' }
 
     stages {
         stage('Pull') {
